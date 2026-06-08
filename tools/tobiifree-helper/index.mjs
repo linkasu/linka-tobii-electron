@@ -2,7 +2,7 @@ import net from "node:net";
 import { mkdir, rm } from "node:fs/promises";
 import { dirname } from "node:path";
 
-const sdkModule = process.env.TOBIIFREE_SDK_MODULE || new URL("../tobiifree-sdk/src/index.ts", import.meta.url).href;
+const sdkModule = process.env.TOBIIFREE_SDK_MODULE || new URL("../tobiifree-sdk/dist/index.js", import.meta.url).href;
 const daemonUrl = process.env.TOBIIFREE_DAEMON_URL;
 const serviceMode = process.argv.includes("--service");
 const serviceSocketPath = getArgValue("--socket") || process.env.TOBIIFREE_SERVICE_SOCKET;

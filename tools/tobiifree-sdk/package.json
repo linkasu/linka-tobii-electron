@@ -3,14 +3,15 @@
   "version": "0.0.0",
   "description": "TypeScript SDK for the Tobii ET5 eye tracker (WebUSB / Node)",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./nodeusb": "./src/nodeusb.ts",
-    "./gusb": "./src/gusb.ts"
+    ".": "./dist/index.js",
+    "./nodeusb": "./dist/nodeusb.js",
+    "./gusb": "./dist/gusb.js"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
