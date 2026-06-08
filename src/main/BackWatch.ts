@@ -244,7 +244,13 @@ export class BackWatch {
   }
 
   onGaze (point: { x: number, y: number, valid: boolean, source: "tobii", timestamp: number }) {
-    this.window?.webContents.send("tobii:gaze", point);
+    if (!this.window || this.window.isDestroyed()) return;
+    const bounds = this.window.getContentBounds();
+    this.window.webContents.send("tobii:gaze", {
+      ...point,
+      x: point.x - bounds.x,
+      y: point.y - bounds.y
+    });
   }
 
   private sendStatus () {
