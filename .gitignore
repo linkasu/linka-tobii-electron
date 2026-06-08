@@ -1,5 +1,8 @@
 node_modules/
 dist/
+extraResources/
+native/tobiifree-native/build/
+native/tobiifree-native/node_modules/
 *.tsbuildinfo
 .DS_Store
 *.log

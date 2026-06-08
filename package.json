@@ -15,6 +15,7 @@
   "types": "dist/main/index.d.ts",
   "files": [
     "dist/**/*",
+    "extraResources/bin/**/*",
     "tools/tobiifree-helper/**/*",
     "tools/tobiifree-sdk/**/*",
     "native/tobiifree-native/**/*",
