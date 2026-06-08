@@ -1,7 +1,16 @@
 import { dirname, join } from "path";
+import { createRequire } from "module";
+
+const requireFromPackage = createRequire(__filename);
 
 function packageRoot(): string {
   return join(dirname(__dirname), "..");
+}
+
+function dependencyRoot(name: string): string {
+  return dirname(requireFromPackage.resolve(`${name}/package.json`, {
+    paths: [packageRoot(), process.cwd()]
+  }));
 }
 
 export function getTobiiExtraResources() {
@@ -18,12 +27,12 @@ export function getTobiiExtraResources() {
       filter: ["**/*"]
     },
     {
-      from: join(root, "node_modules", "usb"),
+      from: dependencyRoot("usb"),
       to: "extraResources/bin/node_modules/usb",
       filter: ["**/*"]
     },
     {
-      from: join(root, "node_modules", "node-gyp-build"),
+      from: dependencyRoot("node-gyp-build"),
       to: "extraResources/bin/node_modules/node-gyp-build",
       filter: ["**/*"]
     },
