@@ -37,8 +37,8 @@ export function getTobiiExtraResources() {
 
 export function getTobiiAsarUnpackPatterns() {
   return [
-    "node_modules/@linka/tobii-electron/native/tobiifree-native/**/*.node",
-    "node_modules/@linka/tobii-electron/node_modules/@linka/tobiifree-native/**/*.node",
+    "node_modules/@linkasu/tobii-electron/native/tobiifree-native/**/*.node",
+    "node_modules/@linkasu/tobii-electron/node_modules/@linka/tobiifree-native/**/*.node",
     "node_modules/@linka/tobiifree-native/**/*.node"
   ];
 }
