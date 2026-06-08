@@ -1,6 +1,6 @@
 {
   "name": "@linka/tobii-electron",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Shared Electron Tobii eye-tracker integration for LINKa apps",
   "author": "ibakaidov",
   "license": "UNLICENSED",
@@ -39,6 +39,14 @@
     "./electron-builder": {
       "types": "./dist/electron-builder/index.d.ts",
       "default": "./dist/electron-builder/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "main": ["dist/main/index.d.ts"],
+      "renderer": ["dist/renderer/index.d.ts"],
+      "types": ["dist/types/index.d.ts"],
+      "electron-builder": ["dist/electron-builder/index.d.ts"]
     }
   },
   "scripts": {
