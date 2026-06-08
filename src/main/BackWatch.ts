@@ -92,11 +92,21 @@ export class BackWatch {
     this.sendStatus();
   };
 
+  private readonly updateScreenMetrics = () => {
+    if (!this.window || this.window.isDestroyed()) return;
+    const winBounds = this.window.getContentBounds();
+    const m = this.multiplyScale ? screen.getPrimaryDisplay().scaleFactor : 1;
+    this.tobii?.setScaleFactor?.(m);
+    this.tobii?.setScreenRect?.(winBounds.x, winBounds.y, winBounds.width, winBounds.height);
+  };
+
   constructor (win: BrowserWindow, options: BackWatchOptions = {}) {
     this.options = options;
     this.window = win;
     this.webContents = win.webContents;
     win.on("closed", () => this.destroy());
+    win.on("move", this.updateScreenMetrics);
+    win.on("resize", this.updateScreenMetrics);
     try {
       this.tobii = this.createTracker();
       this.tobii?.on("enter", (index: number) => this.onEnter(index));
@@ -113,6 +123,7 @@ export class BackWatch {
       void this.tobii?.initialize?.()
         .then(() => console.warn("[tobii] tracker initialized"))
         .catch((error) => console.warn("[tobii] tracker initialization failed", error));
+      this.updateScreenMetrics();
       ipcMain.on("eye-elements", this.onEyeElements);
       ipcMain.on("button_timeout", this.onButtonTimeout);
       ipcMain.on("button_multiply_scale", this.onButtonMultiplyScale);
@@ -197,6 +208,10 @@ export class BackWatch {
     ipcMain.removeHandler("tobii:calibration:apply-saved");
     ipcMain.removeHandler("tobii:status:get");
     ipcMain.removeHandler("tobii:service:restart");
+    if (this.window && !this.window.isDestroyed()) {
+      this.window.off("move", this.updateScreenMetrics);
+      this.window.off("resize", this.updateScreenMetrics);
+    }
     if (this.webContents && !this.webContents.isDestroyed()) {
       this.webContents.off("did-finish-load", this.onRendererReady);
     }
