@@ -1,6 +1,6 @@
 {
   "name": "@linka/tobii-electron",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared Electron Tobii eye-tracker integration for LINKa apps",
   "author": "ibakaidov",
   "license": "UNLICENSED",
@@ -43,6 +43,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "native:build": "npm --prefix native/tobiifree-native run build",
     "native:test-load": "npm --prefix native/tobiifree-native run test:load",
