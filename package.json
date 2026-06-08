@@ -1,0 +1,73 @@
+{
+  "name": "@linka/tobii-electron",
+  "version": "0.1.0",
+  "description": "Shared Electron Tobii eye-tracker integration for LINKa apps",
+  "author": "ibakaidov",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/linkasu/linka-tobii-electron.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "main": "dist/main/index.js",
+  "types": "dist/main/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "tools/tobiifree-helper/**/*",
+    "tools/tobiifree-sdk/**/*",
+    "native/tobiifree-native/**/*",
+    "!native/tobiifree-native/node_modules/**/*",
+    "!native/tobiifree-native/build/**/*",
+    "scripts/**/*"
+  ],
+  "exports": {
+    "./main": {
+      "types": "./dist/main/index.d.ts",
+      "default": "./dist/main/index.js"
+    },
+    "./renderer": {
+      "types": "./dist/renderer/index.d.ts",
+      "default": "./dist/renderer/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/types/index.js"
+    },
+    "./electron-builder": {
+      "types": "./dist/electron-builder/index.d.ts",
+      "default": "./dist/electron-builder/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "native:build": "npm --prefix native/tobiifree-native run build",
+    "native:test-load": "npm --prefix native/tobiifree-native run test:load",
+    "test:pack": "npm pack --dry-run",
+    "postinstall": "node scripts/copy-eyelog-bin.js"
+  },
+  "dependencies": {
+    "eyelog": "linkasu/node-eyelog",
+    "usb": "^2.17.0",
+    "uuid": "^14.0.0"
+  },
+  "optionalDependencies": {
+    "@linka/tobiifree-native": "file:native/tobiifree-native"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "electron": "^42.0.0",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "electron": ">=39"
+  },
+  "peerDependenciesMeta": {
+    "electron": {
+      "optional": false
+    }
+  },
+  "packageManager": "npm@10.9.7"
+}

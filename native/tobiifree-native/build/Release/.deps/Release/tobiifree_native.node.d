@@ -1,0 +1,1 @@
+cmd_Release/tobiifree_native.node := c++ -bundle -undefined dynamic_lookup -Wl,-search_paths_first -mmacosx-version-min=12.0 -arch arm64 -L./Release -stdlib=libc++  -o Release/tobiifree_native.node Release/obj.target/tobiifree_native/src/addon.o Release/nothing.a 
