@@ -270,7 +270,6 @@ export class TobiiFreeTrackerProcess extends EventEmitter implements EyeTrackerP
       this.helperReady = false;
       this.resetTarget(true);
       this.rejectPending(new Error("Tobii service disconnected"));
-      this.rejectReadyWaiters(new Error("Tobii service disconnected"));
       this.scheduleReconnect("socket closed");
     });
     socket.connect(this.socketPath);

@@ -1,5 +1,5 @@
 import { platform } from "os";
-import { app, BrowserWindow, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent, screen } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent, screen, WebContents } from "electron";
 import type { PageElementsState } from "../types";
 import type { EyeTrackerBound, EyeTrackerProcess, TobiiStatus } from "./EyeTrackerProcess";
 import { EyeLogTrackerProcess } from "./EyeLogTrackerProcess";
@@ -17,6 +17,7 @@ export class BackWatch {
   private readonly options: BackWatchOptions;
   tobii?: EyeTrackerProcess = undefined;
   window?: BrowserWindow;
+  private webContents?: WebContents;
   hid = "";
   multiplyScale = false;
   data?: PageElementsState = undefined;
@@ -94,6 +95,7 @@ export class BackWatch {
   constructor (win: BrowserWindow, options: BackWatchOptions = {}) {
     this.options = options;
     this.window = win;
+    this.webContents = win.webContents;
     win.on("closed", () => this.destroy());
     try {
       this.tobii = this.createTracker();
@@ -121,7 +123,7 @@ export class BackWatch {
       ipcMain.handle("tobii:calibration:apply-saved", this.onCalibrationApplySaved);
       ipcMain.handle("tobii:status:get", this.onStatusGet);
       ipcMain.handle("tobii:service:restart", this.onServiceRestart);
-      win.webContents.on("did-finish-load", this.onRendererReady);
+      this.webContents.on("did-finish-load", this.onRendererReady);
     } catch (error) {
       console.warn("[tobii] failed to start tracker", error);
       if (this.options.showStartupError !== false) {
@@ -195,9 +197,12 @@ export class BackWatch {
     ipcMain.removeHandler("tobii:calibration:apply-saved");
     ipcMain.removeHandler("tobii:status:get");
     ipcMain.removeHandler("tobii:service:restart");
-    this.window?.webContents.off("did-finish-load", this.onRendererReady);
+    if (this.webContents && !this.webContents.isDestroyed()) {
+      this.webContents.off("did-finish-load", this.onRendererReady);
+    }
     this.tobii?.destroy();
     this.tobii = undefined;
+    this.webContents = undefined;
     this.window = undefined;
   }
 
