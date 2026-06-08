@@ -5,6 +5,7 @@ import { Socket } from "net";
 import { tmpdir } from "os";
 import { mkdir, readFile, rm, writeFile } from "fs/promises";
 import { join } from "path";
+import { defaultSoftwareCalibration } from "./defaultSoftwareCalibration";
 import { resolvePackageExtraResource } from "./resolvePackageExtraResource";
 import type { EyeTrackerBound, EyeTrackerDebugState, EyeTrackerGazePoint, EyeTrackerProcess, TobiiStatus } from "./EyeTrackerProcess";
 
@@ -208,16 +209,19 @@ export class TobiiFreeTrackerProcess extends EventEmitter implements EyeTrackerP
   }
 
   async applySavedCalibration () {
+    let hardwareCalibrationApplied = false;
     try {
       const blob = await readFile(this.calibrationPath);
       await this.sendCommand("calibration.apply", { blobBase64: blob.toString("base64") }, 15000);
-      await this.loadSoftwareCalibration();
-      return true;
+      hardwareCalibrationApplied = true;
     } catch (error) {
-      if (error instanceof Error && "code" in error && error.code === "ENOENT") return false;
-      console.warn("[tobiifree-helper] could not apply saved calibration", error);
-      return false;
+      if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) {
+        console.warn("[tobiifree-helper] could not apply saved calibration", error);
+      }
     }
+
+    await this.loadSoftwareCalibration();
+    return hardwareCalibrationApplied || !!this.softwareCalibration;
   }
 
   restartService () {
@@ -605,15 +609,24 @@ export class TobiiFreeTrackerProcess extends EventEmitter implements EyeTrackerP
       const calibration = JSON.parse(await readFile(this.softwareCalibrationPath, "utf8")) as Partial<SoftwareCalibration>;
       if (calibration.version !== 2 || !calibration.x || !calibration.y || !calibration.samples) {
         console.warn("[tobiifree-helper] ignoring old software calibration", calibration);
-        this.softwareCalibration = undefined;
+        this.loadDefaultSoftwareCalibration();
         return;
       }
       this.softwareCalibration = calibration as SoftwareCalibration;
       console.warn("[tobiifree-helper] software calibration loaded", this.softwareCalibration);
     } catch (error) {
-      if (error instanceof Error && "code" in error && error.code === "ENOENT") return;
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+        this.loadDefaultSoftwareCalibration();
+        return;
+      }
       console.warn("[tobiifree-helper] could not load software calibration", error);
+      this.loadDefaultSoftwareCalibration();
     }
+  }
+
+  private loadDefaultSoftwareCalibration () {
+    this.softwareCalibration = defaultSoftwareCalibration;
+    console.warn("[tobiifree-helper] default software calibration loaded", this.softwareCalibration);
   }
 
   private fitSoftwareCalibration (samples: SoftwareCalibrationSample[]): SoftwareCalibration {
