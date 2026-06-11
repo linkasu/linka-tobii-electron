@@ -39,6 +39,8 @@ type NativeTobiiTracker = {
 
 type NativeTobiiModule = {
   NativeTobiiTracker: new (listener: (event: NativeTobiiEvent) => void) => NativeTobiiTracker;
+  isRuntimeSupported?: () => boolean;
+  getRuntimeSupportReason?: () => string | undefined;
 };
 
 type NativeTobiiEvents = {
@@ -65,6 +67,10 @@ export class NativeTobiiTrackerProcess extends EventEmitter implements EyeTracke
 
   constructor (nativeModule = loadNativeTobiiModule()) {
     super();
+
+    if (nativeModule.isRuntimeSupported && !nativeModule.isRuntimeSupported()) {
+      throw new Error(nativeModule.getRuntimeSupportReason?.() || "Native Tobii tracker is not supported on this platform");
+    }
 
     this.tracker = new nativeModule.NativeTobiiTracker((event) => this.onNativeEvent(event));
   }

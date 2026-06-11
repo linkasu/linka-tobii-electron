@@ -14,15 +14,30 @@
       "defines": [
         "NAPI_CPP_EXCEPTIONS"
       ],
-      "cflags_cc": [
-        "-std=c++20",
-        "-fexceptions"
-      ],
-      "xcode_settings": {
-        "MACOSX_DEPLOYMENT_TARGET": "12.0",
-        "CLANG_CXX_LANGUAGE_STANDARD": "c++20",
-        "GCC_ENABLE_CPP_EXCEPTIONS": "YES"
-      }
+      "conditions": [
+        ["OS=='win'", {
+          "msvs_settings": {
+            "VCCLCompilerTool": {
+              "ExceptionHandling": 1,
+              "AdditionalOptions": [
+                "/std:c++20"
+              ]
+            }
+          }
+        }, {
+          "cflags_cc": [
+            "-std=c++20",
+            "-fexceptions"
+          ]
+        }],
+        ["OS=='mac'", {
+          "xcode_settings": {
+            "MACOSX_DEPLOYMENT_TARGET": "12.0",
+            "CLANG_CXX_LANGUAGE_STANDARD": "c++20",
+            "GCC_ENABLE_CPP_EXCEPTIONS": "YES"
+          }
+        }]
+      ]
     }
   ]
 }

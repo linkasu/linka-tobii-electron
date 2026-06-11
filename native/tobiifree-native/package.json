@@ -1,16 +1,13 @@
 {
   "name": "@linka/tobiifree-native",
   "version": "0.0.1",
-  "description": "Native macOS Tobii Eye Tracker adapter for LINKa looks",
+  "description": "Native Tobii Eye Tracker adapter for LINKa apps",
   "main": "index.js",
   "types": "index.d.ts",
   "gypfile": true,
-  "os": [
-    "darwin"
-  ],
   "scripts": {
     "build": "node-gyp rebuild",
-    "test:load": "node -e \"const native = require('./'); console.log(Object.keys(native).join(','))\""
+    "test:load": "node scripts/smoke-test.js"
   },
   "dependencies": {
     "node-addon-api": "^8.3.1",

@@ -23,9 +23,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm run test:pack
-      - name: Build native addon on macOS
-        if: runner.os == 'macOS'
+      - name: Build native addon
         run: npm run native:build
-      - name: Load native addon on macOS
-        if: runner.os == 'macOS'
+      - name: Load native addon
         run: npm run native:test-load

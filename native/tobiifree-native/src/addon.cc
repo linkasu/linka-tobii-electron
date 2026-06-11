@@ -9,6 +9,24 @@
 
 namespace {
 
+bool IsRuntimeSupported() {
+#if defined(__APPLE__)
+  return true;
+#else
+  return false;
+#endif
+}
+
+std::string RuntimeSupportReason() {
+#if defined(_WIN32)
+  return "Windows native Tobii backend requires EyeX C SDK headers and is not enabled yet";
+#elif defined(__APPLE__)
+  return "";
+#else
+  return "Native Tobii backend is not supported on this platform";
+#endif
+}
+
 struct Rect {
   double x = 0;
   double y = 0;
@@ -74,6 +92,11 @@ public:
 
 private:
   Napi::Value Start(const Napi::CallbackInfo& info) {
+    if (!IsRuntimeSupported()) {
+      EmitError(info.Env(), "UNSUPPORTED_PLATFORM", RuntimeSupportReason());
+      return RejectedPromise(info.Env(), "UNSUPPORTED_PLATFORM", RuntimeSupportReason());
+    }
+
     destroyed_ = false;
     EmitSimpleEvent(info.Env(), "ready");
     return ResolvedPromise(info.Env(), info.Env().Undefined());
@@ -259,6 +282,14 @@ private:
     Emit(env, event);
   }
 
+  void EmitError(Napi::Env env, const std::string& code, const std::string& message) {
+    Napi::Object event = Napi::Object::New(env);
+    event.Set("type", "error");
+    event.Set("code", code);
+    event.Set("message", message);
+    Emit(env, event);
+  }
+
   void EmitIndexedEvent(Napi::Env env, const std::string& type, int index, std::optional<int> count) {
     Napi::Object event = Napi::Object::New(env);
     event.Set("type", type);
@@ -300,8 +331,20 @@ private:
 
 } // namespace
 
+Napi::Value IsRuntimeSupportedExport(const Napi::CallbackInfo& info) {
+  return Napi::Boolean::New(info.Env(), IsRuntimeSupported());
+}
+
+Napi::Value GetRuntimeSupportReasonExport(const Napi::CallbackInfo& info) {
+  std::string reason = RuntimeSupportReason();
+  if (reason.empty()) return info.Env().Undefined();
+  return Napi::String::New(info.Env(), reason);
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
   NativeTobiiTracker::Init(env, exports);
+  exports.Set("isRuntimeSupported", Napi::Function::New(env, IsRuntimeSupportedExport));
+  exports.Set("getRuntimeSupportReason", Napi::Function::New(env, GetRuntimeSupportReasonExport));
   return exports;
 }
 

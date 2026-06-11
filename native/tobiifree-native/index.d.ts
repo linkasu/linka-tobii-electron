@@ -28,6 +28,10 @@ export type NativeTobiiEvent =
   | { type: "debug", state: NativeTobiiDebugState }
   | { type: "error", code: string, message: string };
 
+export function isRuntimeSupported(): boolean;
+
+export function getRuntimeSupportReason(): string | undefined;
+
 export class NativeTobiiTracker {
   constructor(listener: (event: NativeTobiiEvent) => void);
 

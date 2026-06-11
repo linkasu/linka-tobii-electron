@@ -145,7 +145,16 @@ export class BackWatch {
   }
 
   private createTracker (): EyeTrackerProcess | undefined {
-    if (platform() === "win32") return new EyeLogTrackerProcess(this.options.resolveExtraResource);
+    if (platform() === "win32") {
+      if (process.env.TOBII_NATIVE === "1") {
+        try {
+          return new NativeTobiiTrackerProcess();
+        } catch (error) {
+          console.warn("[tobii] native Windows tracker unavailable, falling back to EyeLog", error);
+        }
+      }
+      return new EyeLogTrackerProcess(this.options.resolveExtraResource);
+    }
     if (platform() === "darwin") {
       if (this.options.enableNativeMacTracker || process.env.TOBII_NATIVE === "1") {
         try {
