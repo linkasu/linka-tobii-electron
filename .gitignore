@@ -1,5 +1,10 @@
 node_modules/
 dist/
+!dist/
+!dist/**
+tools/tobiifree-sdk/dist/
+!tools/tobiifree-sdk/dist/
+!tools/tobiifree-sdk/dist/**
 extraResources/
 native/tobiifree-native/build/
 native/tobiifree-native/node_modules/

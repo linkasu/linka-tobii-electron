@@ -1,0 +1,50 @@
+import { BrowserWindow } from "electron";
+import type { PageElementsState } from "../types";
+import type { EyeTrackerProcess } from "./EyeTrackerProcess";
+export type BackWatchOptions = {
+    resolveExtraResource?: (...segments: string[]) => string;
+    socketName?: string;
+    enableNativeMacTracker?: boolean;
+    showStartupError?: boolean;
+};
+export declare class BackWatch {
+    private readonly options;
+    tobii?: EyeTrackerProcess;
+    window?: BrowserWindow;
+    private webContents?;
+    hid: string;
+    multiplyScale: boolean;
+    data?: PageElementsState;
+    private debugEnabled;
+    private boundsLogged;
+    private status;
+    private readonly onEyeElements;
+    private readonly onButtonTimeout;
+    private readonly onButtonMultiplyScale;
+    private readonly onDebugSetEnabled;
+    private readonly onCalibrationStart;
+    private readonly onCalibrationAddPoint;
+    private readonly onCalibrationFinish;
+    private readonly onCalibrationApplySaved;
+    private readonly onStatus;
+    private readonly onStatusGet;
+    private readonly onServiceRestart;
+    private readonly onRendererReady;
+    private readonly updateScreenMetrics;
+    constructor(win: BrowserWindow, options?: BackWatchOptions);
+    private createTracker;
+    private requireCalibrationMethod;
+    private processData;
+    private destroy;
+    onClick(index: number, count: number): void;
+    onExit(): void;
+    onEnter(index: number): void;
+    onGaze(point: {
+        x: number;
+        y: number;
+        valid: boolean;
+        source: "tobii";
+        timestamp: number;
+    }): void;
+    private sendStatus;
+}
