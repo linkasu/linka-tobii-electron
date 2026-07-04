@@ -60,7 +60,7 @@
     "postinstall": "node scripts/copy-eyelog-bin.js"
   },
   "dependencies": {
-    "eyelog": "linkasu/node-eyelog#129e330fa2513e3ed5684ccde84b4e8f62f13d8d",
+    "eyelog": "linkasu/node-eyelog#1110e0565933f696a17269e51c8b3acf8e683e61",
     "usb": "^2.17.0",
     "uuid": "^14.0.0"
   },
