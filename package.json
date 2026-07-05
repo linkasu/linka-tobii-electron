@@ -1,6 +1,6 @@
 {
   "name": "@linkasu/tobii-electron",
-  "version": "0.2.12",
+  "version": "0.2.13",
   "description": "Shared Electron Tobii eye-tracker integration for LINKa apps",
   "author": "ibakaidov",
   "license": "UNLICENSED",
@@ -60,7 +60,7 @@
     "postinstall": "node scripts/copy-eyelog-bin.js"
   },
   "dependencies": {
-    "eyelog": "linkasu/node-eyelog#1110e0565933f696a17269e51c8b3acf8e683e61",
+    "eyelog": "linkasu/node-eyelog#41e8280",
     "usb": "^2.17.0",
     "uuid": "^14.0.0"
   },
