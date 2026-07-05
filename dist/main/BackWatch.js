@@ -16,7 +16,7 @@ class BackWatch {
     data = undefined;
     debugEnabled = false;
     boundsLogged = false;
-    coordinateScaleMode = "auto";
+    coordinateScaleMode = "one";
     appliedScaleFactor = 1;
     recentTrackerDebug = [];
     recentGaze = [];
@@ -195,8 +195,6 @@ class BackWatch {
             this.appliedScaleFactor = displayScaleFactor;
         else if (this.coordinateScaleMode === "inverse-display")
             this.appliedScaleFactor = displayScaleFactor > 0 ? 1 / displayScaleFactor : 1;
-        else if ((0, os_1.platform)() === "win32" && this.status.mode === "direct")
-            this.appliedScaleFactor = displayScaleFactor;
         else
             this.appliedScaleFactor = this.multiplyScale ? displayScaleFactor : 1;
         return this.appliedScaleFactor;
