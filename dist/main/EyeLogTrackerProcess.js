@@ -81,6 +81,17 @@ class EyeLogTrackerProcess extends events_1.EventEmitter {
             timestamp: now
         };
         this.updateStatus({ state: "tracking", message: "EyeLog получает взгляд", deviceFound: true, lastGazeAt: now });
+        this.emit("debug", {
+            raw: { x, y },
+            normalized: screenPoint,
+            screen: screenPoint,
+            screenRect: this.screenRect,
+            boundsCount: 0,
+            hitIndex: -1,
+            softwareCalibration: false,
+            scaleFactor: this.scaleFactor,
+            at: now
+        });
         this.emit("gaze", point);
     }
     isInsideScreenRect(x, y) {

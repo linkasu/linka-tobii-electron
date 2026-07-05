@@ -1,6 +1,6 @@
 import { BrowserWindow } from "electron";
 import type { PageElementsState } from "../types";
-import type { EyeTrackerProcess } from "./EyeTrackerProcess";
+import type { EyeTrackerGazePoint, EyeTrackerProcess } from "./EyeTrackerProcess";
 export type BackWatchOptions = {
     resolveExtraResource?: (...segments: string[]) => string;
     socketName?: string;
@@ -17,11 +17,17 @@ export declare class BackWatch {
     data?: PageElementsState;
     private debugEnabled;
     private boundsLogged;
+    private coordinateScaleMode;
+    private appliedScaleFactor;
+    private recentTrackerDebug;
+    private recentGaze;
     private status;
     private readonly onEyeElements;
     private readonly onButtonTimeout;
     private readonly onButtonMultiplyScale;
     private readonly onDebugSetEnabled;
+    private readonly onDiagnosticsGet;
+    private readonly onDiagnosticsSetScaleMode;
     private readonly onCalibrationStart;
     private readonly onCalibrationAddPoint;
     private readonly onCalibrationFinish;
@@ -34,17 +40,16 @@ export declare class BackWatch {
     constructor(win: BrowserWindow, options?: BackWatchOptions);
     private createTracker;
     private requireCalibrationMethod;
+    private rememberTrackerDebug;
+    private onTrackerDebug;
+    private getDisplayForBounds;
+    private getAppliedScaleFactor;
+    private getDiagnostics;
     private processData;
     private destroy;
     onClick(index: number, count: number): void;
     onExit(): void;
     onEnter(index: number): void;
-    onGaze(point: {
-        x: number;
-        y: number;
-        valid: boolean;
-        source: "tobii";
-        timestamp: number;
-    }): void;
+    onGaze(point: EyeTrackerGazePoint): void;
     private sendStatus;
 }

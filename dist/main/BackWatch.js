@@ -16,6 +16,10 @@ class BackWatch {
     data = undefined;
     debugEnabled = false;
     boundsLogged = false;
+    coordinateScaleMode = "auto";
+    appliedScaleFactor = 1;
+    recentTrackerDebug = [];
+    recentGaze = [];
     status = {
         state: "unsupported",
         mode: "unsupported",
@@ -38,6 +42,18 @@ class BackWatch {
     onDebugSetEnabled = (event, value) => {
         this.debugEnabled = value;
         this.tobii?.setDebugEnabled?.(value);
+    };
+    onDiagnosticsGet = () => {
+        return this.getDiagnostics();
+    };
+    onDiagnosticsSetScaleMode = (event, mode) => {
+        if (!["auto", "one", "display", "inverse-display"].includes(mode)) {
+            throw new Error("Некорректный режим масштаба Tobii");
+        }
+        this.coordinateScaleMode = mode;
+        this.updateScreenMetrics();
+        this.processData();
+        return this.getDiagnostics();
     };
     onCalibrationStart = async () => {
         await this.requireCalibrationMethod("startCalibration")();
@@ -78,9 +94,9 @@ class BackWatch {
         if (!this.window || this.window.isDestroyed())
             return;
         const winBounds = this.window.getContentBounds();
-        const m = this.multiplyScale ? electron_1.screen.getPrimaryDisplay().scaleFactor : 1;
-        this.tobii?.setScaleFactor?.(m);
+        const m = this.getAppliedScaleFactor(winBounds);
         this.tobii?.setScreenRect?.(winBounds.x, winBounds.y, winBounds.width, winBounds.height);
+        this.tobii?.setScaleFactor?.(m);
     };
     constructor(win, options = {}) {
         this.options = options;
@@ -95,14 +111,9 @@ class BackWatch {
             this.tobii?.on("exit", () => this.onExit());
             this.tobii?.on("click", (index, count) => this.onClick(index, count));
             this.tobii?.on("gaze", (point) => this.onGaze(point));
+            this.tobii?.on("debug", (state) => this.onTrackerDebug(state));
             this.status = this.tobii?.getStatus?.() || this.status;
             this.tobii?.on("status", this.onStatus);
-            if (!electron_1.app.isPackaged) {
-                this.tobii?.on("debug", (state) => {
-                    if (this.debugEnabled)
-                        this.window?.webContents.send("tobii:debug", state);
-                });
-            }
             void this.tobii?.initialize?.()
                 .then(() => console.warn("[tobii] tracker initialized"))
                 .catch((error) => console.warn("[tobii] tracker initialization failed", error));
@@ -111,6 +122,8 @@ class BackWatch {
             electron_1.ipcMain.on("button_timeout", this.onButtonTimeout);
             electron_1.ipcMain.on("button_multiply_scale", this.onButtonMultiplyScale);
             electron_1.ipcMain.on("tobii:debug:set-enabled", this.onDebugSetEnabled);
+            electron_1.ipcMain.handle("tobii:diagnostics:get", this.onDiagnosticsGet);
+            electron_1.ipcMain.handle("tobii:diagnostics:set-scale-mode", this.onDiagnosticsSetScaleMode);
             electron_1.ipcMain.handle("tobii:calibration:start", this.onCalibrationStart);
             electron_1.ipcMain.handle("tobii:calibration:add-point", this.onCalibrationAddPoint);
             electron_1.ipcMain.handle("tobii:calibration:finish", this.onCalibrationFinish);
@@ -161,6 +174,53 @@ class BackWatch {
             throw new Error("Калибровка Tobii доступна только в экспериментальном macOS-режиме");
         return fn.bind(this.tobii);
     }
+    rememberTrackerDebug(state) {
+        this.recentTrackerDebug = [...this.recentTrackerDebug.slice(-119), state];
+    }
+    onTrackerDebug(state) {
+        this.rememberTrackerDebug(state);
+        if (this.debugEnabled || !electron_1.app.isPackaged)
+            this.window?.webContents.send("tobii:debug", state);
+    }
+    getDisplayForBounds(bounds = this.window?.getContentBounds()) {
+        if (!bounds)
+            return electron_1.screen.getPrimaryDisplay();
+        return electron_1.screen.getDisplayMatching(bounds);
+    }
+    getAppliedScaleFactor(bounds = this.window?.getContentBounds()) {
+        const displayScaleFactor = this.getDisplayForBounds(bounds).scaleFactor || 1;
+        if (this.coordinateScaleMode === "one")
+            this.appliedScaleFactor = 1;
+        else if (this.coordinateScaleMode === "display")
+            this.appliedScaleFactor = displayScaleFactor;
+        else if (this.coordinateScaleMode === "inverse-display")
+            this.appliedScaleFactor = displayScaleFactor > 0 ? 1 / displayScaleFactor : 1;
+        else if ((0, os_1.platform)() === "win32" && this.status.mode === "direct")
+            this.appliedScaleFactor = displayScaleFactor;
+        else
+            this.appliedScaleFactor = this.multiplyScale ? displayScaleFactor : 1;
+        return this.appliedScaleFactor;
+    }
+    getDiagnostics() {
+        const contentBounds = this.window && !this.window.isDestroyed() ? this.window.getContentBounds() : undefined;
+        const display = this.getDisplayForBounds(contentBounds);
+        const windowBounds = this.window && !this.window.isDestroyed() ? this.window.getBounds() : undefined;
+        return {
+            status: this.status,
+            coordinateScaleMode: this.coordinateScaleMode,
+            appliedScaleFactor: this.appliedScaleFactor,
+            window: this.window && !this.window.isDestroyed() && windowBounds && contentBounds
+                ? { focused: this.window.isFocused(), bounds: windowBounds, contentBounds }
+                : undefined,
+            display: {
+                bounds: display.bounds,
+                workArea: display.workArea,
+                scaleFactor: display.scaleFactor
+            },
+            recentTrackerDebug: this.recentTrackerDebug,
+            recentGaze: this.recentGaze
+        };
+    }
     processData() {
         if (!this.window || this.window.isDestroyed() || !this.data)
             return;
@@ -177,7 +237,7 @@ class BackWatch {
                 firstDomBound: this.data.bounds[0]
             });
         }
-        const m = this.multiplyScale ? (electron_1.screen.getPrimaryDisplay().scaleFactor) : 1;
+        const m = this.getAppliedScaleFactor(winBounds);
         this.tobii?.setScaleFactor?.(m);
         this.tobii?.setScreenRect?.(winBounds.x, winBounds.y, winBounds.width, winBounds.height);
         const bounds = this.data.bounds.map((el) => {
@@ -193,6 +253,8 @@ class BackWatch {
         electron_1.ipcMain.off("button_timeout", this.onButtonTimeout);
         electron_1.ipcMain.off("button_multiply_scale", this.onButtonMultiplyScale);
         electron_1.ipcMain.off("tobii:debug:set-enabled", this.onDebugSetEnabled);
+        electron_1.ipcMain.removeHandler("tobii:diagnostics:get");
+        electron_1.ipcMain.removeHandler("tobii:diagnostics:set-scale-mode");
         electron_1.ipcMain.removeHandler("tobii:calibration:start");
         electron_1.ipcMain.removeHandler("tobii:calibration:add-point");
         electron_1.ipcMain.removeHandler("tobii:calibration:finish");
@@ -235,11 +297,20 @@ class BackWatch {
         if (!this.window || this.window.isDestroyed())
             return;
         const bounds = this.window.getContentBounds();
-        this.window.webContents.send("tobii:gaze", {
+        const displayScaleFactor = this.getDisplayForBounds(bounds).scaleFactor || 1;
+        const clientPoint = {
             ...point,
             x: point.x - bounds.x,
             y: point.y - bounds.y
-        });
+        };
+        this.recentGaze = [...this.recentGaze.slice(-119), {
+                at: Date.now(),
+                screen: point,
+                client: clientPoint,
+                contentBounds: bounds,
+                displayScaleFactor
+            }];
+        this.window.webContents.send("tobii:gaze", clientPoint);
     }
     sendStatus() {
         if (!this.window || this.window.isDestroyed())

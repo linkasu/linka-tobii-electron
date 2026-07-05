@@ -26,6 +26,8 @@ export interface EyeTrackerDebugState {
     boundsCount: number;
     hitIndex: number;
     softwareCalibration: boolean;
+    scaleFactor?: number;
+    at?: number;
 }
 export interface EyeTrackerGazePoint {
     x: number;
@@ -66,4 +68,53 @@ export interface EyeTrackerProcess {
     finishCalibration?(): Promise<void>;
     applySavedCalibration?(): Promise<boolean>;
     destroy(): void;
+}
+export type TobiiCoordinateScaleMode = "auto" | "one" | "display" | "inverse-display";
+export interface TobiiDiagnosticsSnapshot {
+    status: TobiiStatus;
+    coordinateScaleMode: TobiiCoordinateScaleMode;
+    appliedScaleFactor: number;
+    window?: {
+        focused: boolean;
+        bounds: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        };
+        contentBounds: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        };
+    };
+    display?: {
+        bounds: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        };
+        workArea: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        };
+        scaleFactor: number;
+    };
+    recentTrackerDebug: EyeTrackerDebugState[];
+    recentGaze: Array<{
+        at: number;
+        screen: EyeTrackerGazePoint;
+        client: EyeTrackerGazePoint;
+        contentBounds: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        };
+        displayScaleFactor: number;
+    }>;
 }
