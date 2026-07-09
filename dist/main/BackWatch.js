@@ -16,7 +16,7 @@ class BackWatch {
     data = undefined;
     debugEnabled = false;
     boundsLogged = false;
-    coordinateScaleMode = "one";
+    coordinateScaleMode = "auto";
     appliedScaleFactor = 1;
     recentTrackerDebug = [];
     recentGaze = [];
@@ -195,8 +195,10 @@ class BackWatch {
             this.appliedScaleFactor = displayScaleFactor;
         else if (this.coordinateScaleMode === "inverse-display")
             this.appliedScaleFactor = displayScaleFactor > 0 ? 1 / displayScaleFactor : 1;
-        else
-            this.appliedScaleFactor = this.multiplyScale ? displayScaleFactor : 1;
+        else {
+            // EyeLog reports Windows physical pixels, while Electron window bounds and DOM rects are DIP.
+            this.appliedScaleFactor = this.status.mode === "direct" ? displayScaleFactor : this.multiplyScale ? displayScaleFactor : 1;
+        }
         return this.appliedScaleFactor;
     }
     getDiagnostics() {

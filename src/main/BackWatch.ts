@@ -23,7 +23,7 @@ export class BackWatch {
   data?: PageElementsState = undefined;
   private debugEnabled = false;
   private boundsLogged = false;
-  private coordinateScaleMode: TobiiCoordinateScaleMode = "one";
+  private coordinateScaleMode: TobiiCoordinateScaleMode = "auto";
   private appliedScaleFactor = 1;
   private recentTrackerDebug: EyeTrackerDebugState[] = [];
   private recentGaze: TobiiDiagnosticsSnapshot["recentGaze"] = [];
@@ -212,7 +212,10 @@ export class BackWatch {
     if (this.coordinateScaleMode === "one") this.appliedScaleFactor = 1;
     else if (this.coordinateScaleMode === "display") this.appliedScaleFactor = displayScaleFactor;
     else if (this.coordinateScaleMode === "inverse-display") this.appliedScaleFactor = displayScaleFactor > 0 ? 1 / displayScaleFactor : 1;
-    else this.appliedScaleFactor = this.multiplyScale ? displayScaleFactor : 1;
+    else {
+      // EyeLog reports Windows physical pixels, while Electron window bounds and DOM rects are DIP.
+      this.appliedScaleFactor = this.status.mode === "direct" ? displayScaleFactor : this.multiplyScale ? displayScaleFactor : 1;
+    }
     return this.appliedScaleFactor;
   }
 

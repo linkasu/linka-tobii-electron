@@ -1,6 +1,6 @@
 {
   "name": "@linkasu/tobii-electron",
-  "version": "0.2.14",
+  "version": "0.2.15",
   "description": "Shared Electron Tobii eye-tracker integration for LINKa apps",
   "author": "ibakaidov",
   "license": "UNLICENSED",
