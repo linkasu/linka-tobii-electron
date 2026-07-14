@@ -8,7 +8,6 @@ const net_1 = require("net");
 const os_1 = require("os");
 const promises_1 = require("fs/promises");
 const path_1 = require("path");
-const defaultSoftwareCalibration_1 = require("./defaultSoftwareCalibration");
 const resolvePackageExtraResource_1 = require("./resolvePackageExtraResource");
 const SERVICE_START_COOLDOWN_MS = 2000;
 const SERVICE_RECONNECT_MAX_MS = 5000;
@@ -425,25 +424,27 @@ class TobiiFreeTrackerProcess extends events_1.EventEmitter {
             x: this.clamp01(calibratedPoint.x),
             y: this.clamp01(calibratedPoint.y)
         };
-        const point = this.toScreenPoint(normalizedPoint.x, normalizedPoint.y);
+        const hitPoint = this.toScaledScreenPoint(normalizedPoint.x, normalizedPoint.y);
+        const screenPoint = this.toDipPoint(hitPoint);
         this.emit("gaze", {
-            x: point.x,
-            y: point.y,
+            x: screenPoint.x,
+            y: screenPoint.y,
             valid: true,
             source: "tobii",
             timestamp: Date.now()
         });
         const index = this.bounds.findIndex((bound) => {
-            return point.x >= bound.x && point.x <= bound.x + bound.width &&
-                point.y >= bound.y && point.y <= bound.y + bound.height;
+            return hitPoint.x >= bound.x && hitPoint.x <= bound.x + bound.width &&
+                hitPoint.y >= bound.y && hitPoint.y <= bound.y + bound.height;
         });
         this.gazeSamples += 1;
-        this.emitDebugState(rawPoint, normalizedPoint, point, index);
+        this.emitDebugState(rawPoint, normalizedPoint, screenPoint, index);
         if (this.gazeSamples === 1 || this.gazeSamples % 120 === 0) {
             console.warn("[tobiifree-helper] gaze sample", {
                 raw: rawPoint,
                 normalized: normalizedPoint,
-                screen: point,
+                screen: screenPoint,
+                hit: hitPoint,
                 bounds: this.bounds.length,
                 index,
                 softwareCalibration: this.softwareCalibration
@@ -456,7 +457,7 @@ class TobiiFreeTrackerProcess extends events_1.EventEmitter {
         this.enterTarget(index);
         this.clickIfReady(index);
     }
-    toScreenPoint(x, y) {
+    toScaledScreenPoint(x, y) {
         const display = electron_1.screen.getPrimaryDisplay();
         if (!this.displayLogged) {
             this.displayLogged = true;
@@ -473,6 +474,13 @@ class TobiiFreeTrackerProcess extends events_1.EventEmitter {
             y: Math.round((this.screenRect.y + y * this.screenRect.height + this.extraOffsetY) * this.scaleFactor)
         };
     }
+    toDipPoint(point) {
+        const scaleFactor = this.scaleFactor || 1;
+        return {
+            x: point.x / scaleFactor,
+            y: point.y / scaleFactor
+        };
+    }
     emitDebugState(raw, normalized, point, hitIndex) {
         const now = Date.now();
         if (!this.debugEnabled || now - this.lastDebugAt < 250)
@@ -485,7 +493,8 @@ class TobiiFreeTrackerProcess extends events_1.EventEmitter {
             screenRect: this.screenRect,
             boundsCount: this.bounds.length,
             hitIndex,
-            softwareCalibration: !!this.softwareCalibration
+            softwareCalibration: !!this.softwareCalibration,
+            scaleFactor: this.scaleFactor
         });
     }
     rememberRecentGazePoint(point) {
@@ -522,7 +531,15 @@ class TobiiFreeTrackerProcess extends events_1.EventEmitter {
             const calibration = JSON.parse(await (0, promises_1.readFile)(this.softwareCalibrationPath, "utf8"));
             if (calibration.version !== 2 || !calibration.x || !calibration.y || !calibration.samples) {
                 console.warn("[tobiifree-helper] ignoring old software calibration", calibration);
-                this.loadDefaultSoftwareCalibration();
+                this.softwareCalibration = undefined;
+                return;
+            }
+            if (!calibration.context || !this.isCalibrationContextCompatible(calibration.context)) {
+                console.warn("[tobiifree-helper] ignoring software calibration for different display", {
+                    saved: calibration.context,
+                    current: this.createSoftwareCalibrationContext()
+                });
+                this.softwareCalibration = undefined;
                 return;
             }
             this.softwareCalibration = calibration;
@@ -530,24 +547,46 @@ class TobiiFreeTrackerProcess extends events_1.EventEmitter {
         }
         catch (error) {
             if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-                this.loadDefaultSoftwareCalibration();
+                this.softwareCalibration = undefined;
+                console.warn("[tobiifree-helper] no software calibration found; using raw gaze mapping");
                 return;
             }
             console.warn("[tobiifree-helper] could not load software calibration", error);
-            this.loadDefaultSoftwareCalibration();
+            this.softwareCalibration = undefined;
         }
-    }
-    loadDefaultSoftwareCalibration() {
-        this.softwareCalibration = defaultSoftwareCalibration_1.defaultSoftwareCalibration;
-        console.warn("[tobiifree-helper] default software calibration loaded", this.softwareCalibration);
     }
     fitSoftwareCalibration(samples) {
         return {
             version: 2,
             x: this.fitAxis(samples.map((sample) => ({ raw: sample.raw.x, target: sample.target.x }))),
             y: this.fitAxis(samples.map((sample) => ({ raw: sample.raw.y, target: sample.target.y }))),
-            samples
+            samples,
+            context: this.createSoftwareCalibrationContext()
         };
+    }
+    createSoftwareCalibrationContext() {
+        const display = electron_1.screen.getDisplayMatching(this.screenRect);
+        return {
+            display: {
+                bounds: { ...display.bounds },
+                workArea: { ...display.workArea },
+                scaleFactor: display.scaleFactor
+            },
+            screenRect: { ...this.screenRect }
+        };
+    }
+    isCalibrationContextCompatible(context) {
+        const current = this.createSoftwareCalibrationContext();
+        return Math.abs(context.display.scaleFactor - current.display.scaleFactor) < 0.001 &&
+            this.areRectsClose(context.display.bounds, current.display.bounds, 2) &&
+            this.areRectsClose(context.display.workArea, current.display.workArea, 2) &&
+            this.areRectsClose(context.screenRect, current.screenRect, 8);
+    }
+    areRectsClose(a, b, tolerance) {
+        return Math.abs(a.x - b.x) <= tolerance &&
+            Math.abs(a.y - b.y) <= tolerance &&
+            Math.abs(a.width - b.width) <= tolerance &&
+            Math.abs(a.height - b.height) <= tolerance;
     }
     fitAxis(samples) {
         const rawMean = samples.reduce((sum, sample) => sum + sample.raw, 0) / samples.length;

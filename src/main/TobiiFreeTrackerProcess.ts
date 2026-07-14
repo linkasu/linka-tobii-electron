@@ -5,7 +5,6 @@ import { Socket } from "net";
 import { tmpdir } from "os";
 import { mkdir, readFile, rm, writeFile } from "fs/promises";
 import { join } from "path";
-import { defaultSoftwareCalibration } from "./defaultSoftwareCalibration";
 import { resolvePackageExtraResource } from "./resolvePackageExtraResource";
 import type { EyeTrackerBound, EyeTrackerDebugState, EyeTrackerGazePoint, EyeTrackerProcess, TobiiStatus } from "./EyeTrackerProcess";
 
@@ -57,6 +56,23 @@ type SoftwareCalibration = {
   x: SoftwareCalibrationAxis;
   y: SoftwareCalibrationAxis;
   samples: SoftwareCalibrationSample[];
+  context?: SoftwareCalibrationContext;
+};
+
+type RectLike = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+type SoftwareCalibrationContext = {
+  display: {
+    bounds: RectLike;
+    workArea: RectLike;
+    scaleFactor: number;
+  };
+  screenRect: RectLike;
 };
 
 type TobiiFreeEvents = {
@@ -506,25 +522,27 @@ export class TobiiFreeTrackerProcess extends EventEmitter implements EyeTrackerP
       x: this.clamp01(calibratedPoint.x),
       y: this.clamp01(calibratedPoint.y)
     };
-    const point = this.toScreenPoint(normalizedPoint.x, normalizedPoint.y);
+    const hitPoint = this.toScaledScreenPoint(normalizedPoint.x, normalizedPoint.y);
+    const screenPoint = this.toDipPoint(hitPoint);
     this.emit("gaze", {
-      x: point.x,
-      y: point.y,
+      x: screenPoint.x,
+      y: screenPoint.y,
       valid: true,
       source: "tobii",
       timestamp: Date.now()
     });
     const index = this.bounds.findIndex((bound) => {
-      return point.x >= bound.x && point.x <= bound.x + bound.width &&
-        point.y >= bound.y && point.y <= bound.y + bound.height;
+      return hitPoint.x >= bound.x && hitPoint.x <= bound.x + bound.width &&
+        hitPoint.y >= bound.y && hitPoint.y <= bound.y + bound.height;
     });
     this.gazeSamples += 1;
-    this.emitDebugState(rawPoint, normalizedPoint, point, index);
+    this.emitDebugState(rawPoint, normalizedPoint, screenPoint, index);
     if (this.gazeSamples === 1 || this.gazeSamples % 120 === 0) {
       console.warn("[tobiifree-helper] gaze sample", {
         raw: rawPoint,
         normalized: normalizedPoint,
-        screen: point,
+        screen: screenPoint,
+        hit: hitPoint,
         bounds: this.bounds.length,
         index,
         softwareCalibration: this.softwareCalibration
@@ -540,7 +558,7 @@ export class TobiiFreeTrackerProcess extends EventEmitter implements EyeTrackerP
     this.clickIfReady(index);
   }
 
-  private toScreenPoint (x: number, y: number) {
+  private toScaledScreenPoint (x: number, y: number) {
     const display = screen.getPrimaryDisplay();
     if (!this.displayLogged) {
       this.displayLogged = true;
@@ -558,6 +576,14 @@ export class TobiiFreeTrackerProcess extends EventEmitter implements EyeTrackerP
     };
   }
 
+  private toDipPoint (point: GazePoint) {
+    const scaleFactor = this.scaleFactor || 1;
+    return {
+      x: point.x / scaleFactor,
+      y: point.y / scaleFactor
+    };
+  }
+
   private emitDebugState (raw: GazePoint, normalized: GazePoint, point: GazePoint, hitIndex: number) {
     const now = Date.now();
     if (!this.debugEnabled || now - this.lastDebugAt < 250) return;
@@ -569,7 +595,8 @@ export class TobiiFreeTrackerProcess extends EventEmitter implements EyeTrackerP
       screenRect: this.screenRect,
       boundsCount: this.bounds.length,
       hitIndex,
-      softwareCalibration: !!this.softwareCalibration
+      softwareCalibration: !!this.softwareCalibration,
+      scaleFactor: this.scaleFactor
     });
   }
 
@@ -609,24 +636,28 @@ export class TobiiFreeTrackerProcess extends EventEmitter implements EyeTrackerP
       const calibration = JSON.parse(await readFile(this.softwareCalibrationPath, "utf8")) as Partial<SoftwareCalibration>;
       if (calibration.version !== 2 || !calibration.x || !calibration.y || !calibration.samples) {
         console.warn("[tobiifree-helper] ignoring old software calibration", calibration);
-        this.loadDefaultSoftwareCalibration();
+        this.softwareCalibration = undefined;
+        return;
+      }
+      if (!calibration.context || !this.isCalibrationContextCompatible(calibration.context)) {
+        console.warn("[tobiifree-helper] ignoring software calibration for different display", {
+          saved: calibration.context,
+          current: this.createSoftwareCalibrationContext()
+        });
+        this.softwareCalibration = undefined;
         return;
       }
       this.softwareCalibration = calibration as SoftwareCalibration;
       console.warn("[tobiifree-helper] software calibration loaded", this.softwareCalibration);
     } catch (error) {
       if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-        this.loadDefaultSoftwareCalibration();
+        this.softwareCalibration = undefined;
+        console.warn("[tobiifree-helper] no software calibration found; using raw gaze mapping");
         return;
       }
       console.warn("[tobiifree-helper] could not load software calibration", error);
-      this.loadDefaultSoftwareCalibration();
+      this.softwareCalibration = undefined;
     }
-  }
-
-  private loadDefaultSoftwareCalibration () {
-    this.softwareCalibration = defaultSoftwareCalibration;
-    console.warn("[tobiifree-helper] default software calibration loaded", this.softwareCalibration);
   }
 
   private fitSoftwareCalibration (samples: SoftwareCalibrationSample[]): SoftwareCalibration {
@@ -634,8 +665,36 @@ export class TobiiFreeTrackerProcess extends EventEmitter implements EyeTrackerP
       version: 2,
       x: this.fitAxis(samples.map((sample) => ({ raw: sample.raw.x, target: sample.target.x }))),
       y: this.fitAxis(samples.map((sample) => ({ raw: sample.raw.y, target: sample.target.y }))),
-      samples
+      samples,
+      context: this.createSoftwareCalibrationContext()
     };
+  }
+
+  private createSoftwareCalibrationContext (): SoftwareCalibrationContext {
+    const display = screen.getDisplayMatching(this.screenRect);
+    return {
+      display: {
+        bounds: { ...display.bounds },
+        workArea: { ...display.workArea },
+        scaleFactor: display.scaleFactor
+      },
+      screenRect: { ...this.screenRect }
+    };
+  }
+
+  private isCalibrationContextCompatible (context: SoftwareCalibrationContext) {
+    const current = this.createSoftwareCalibrationContext();
+    return Math.abs(context.display.scaleFactor - current.display.scaleFactor) < 0.001 &&
+      this.areRectsClose(context.display.bounds, current.display.bounds, 2) &&
+      this.areRectsClose(context.display.workArea, current.display.workArea, 2) &&
+      this.areRectsClose(context.screenRect, current.screenRect, 8);
+  }
+
+  private areRectsClose (a: RectLike, b: RectLike, tolerance: number) {
+    return Math.abs(a.x - b.x) <= tolerance &&
+      Math.abs(a.y - b.y) <= tolerance &&
+      Math.abs(a.width - b.width) <= tolerance &&
+      Math.abs(a.height - b.height) <= tolerance;
   }
 
   private fitAxis (samples: Array<{ raw: number, target: number }>): SoftwareCalibrationAxis {
