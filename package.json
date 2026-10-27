@@ -3,7 +3,7 @@
   "version": "0.2.16",
   "description": "Shared Electron Tobii eye-tracker integration for LINKa apps",
   "author": "ibakaidov",
-  "license": "UNLICENSED",
+  "license": "GPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "https://github.com/linkasu/linka-tobii-electron.git"

@@ -1,4 +1,5 @@
 {
+  "license": "GPL-3.0-or-later",
   "name": "@linka/tobiifree-native",
   "version": "0.0.1",
   "description": "Native Tobii Eye Tracker adapter for LINKa apps",
