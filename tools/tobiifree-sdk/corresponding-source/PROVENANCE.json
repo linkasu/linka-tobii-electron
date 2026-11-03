@@ -1,0 +1,111 @@
+{
+  "upstream": "https://github.com/Aetherall/tobiifree",
+  "revision": "713af3760650254947b5999785a1199d0dd38129",
+  "revision_date": "2026-04-07T13:54:48Z",
+  "scope": "Corresponding Zig driver source and original build scripts for the unchanged embedded WASM. Not a claim that every local TypeScript SDK file is an unmodified copy of this revision.",
+  "upstream_bundle_path": "sdk/src/wasm-bundle.ts",
+  "upstream_bundle_git_blob": "c6e95a781ea60718b2c1f6e4c5824473bda06b14",
+  "bundle_sha256": "5559148d0baa1c1b601eb50d2318424dec1ba3f6ccca784ae755a6de35c3ec2c",
+  "wasm_bytes": 644600,
+  "wasm_sha256": "1e9984cea6b5a142b48a0d2b8867d7418903252b1d3c95201247af1503ffaaa0",
+  "observed_embedded_zig_path_version": "0.15.2",
+  "reproducible_build_verified": false,
+  "files": [
+    {
+      "path": "LICENSE",
+      "git_blob": "f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "bytes": 35149
+    },
+    {
+      "path": "README.md",
+      "git_blob": "c28b9ec703e4cba3b0cd9b2b3d14d49b3faaa4c3",
+      "sha256": "8f399dac1907a28a0f952d1d3fb168c0479c16962f38836bddbd783706273121",
+      "bytes": 2968
+    },
+    {
+      "path": "justfile",
+      "git_blob": "c0608df47a44275684a5c07328e10e64387ca0b1",
+      "sha256": "a2e7f06d4309c2c17b794065ffab7b318e183f8e6b2c0e63ded3ad10371b2954",
+      "bytes": 6636
+    },
+    {
+      "path": "flake.nix",
+      "git_blob": "442a405311ecb075735b9b33f2da555262681f13",
+      "sha256": "455bfc71afb4354f7f8c9a5f5808473351ca4746346c9d637a903f64b2c848ca",
+      "bytes": 3124
+    },
+    {
+      "path": "flake.lock",
+      "git_blob": "4b752998dc0333d27782a76cb8335b19c2fdfd8a",
+      "sha256": "489237a0c19a991621fc5e50e8f039aa335aed1c4ad5bc497b77d0b9b4b0daaf",
+      "bytes": 567
+    },
+    {
+      "path": "scripts/bundle-wasm.mjs",
+      "git_blob": "cf81dc50a3afb032515cccb927bcc55e00cffbe0",
+      "sha256": "04286bb33e9a30dfc96635d1eb533258b87e8c2dd24194cf2043fcb3b2993e64",
+      "bytes": 1237
+    },
+    {
+      "path": "driver/build.zig",
+      "git_blob": "829d60d75a7ee927d47006777148e70baa89d7a6",
+      "sha256": "c891edbca71ab01022405b6ea13237d701310ce8427547be3efde0f81ffbda8d",
+      "bytes": 2187
+    },
+    {
+      "path": "driver/src/daemon_protocol.zig",
+      "git_blob": "2cb245e92d37743f697fe7839ab2caf6cb8ec623",
+      "sha256": "f3644194236a8148dbfc2d48cbdb21cec1b371589b7cc0db903688ebcf2ac526",
+      "bytes": 3809
+    },
+    {
+      "path": "driver/src/gaze_source.zig",
+      "git_blob": "c6eb501206b398a78d2a88877fb0644bac9d5a50",
+      "sha256": "9b3a4ebfd772be203011254a2e3b4399618c7034683a0a513a9e39d846c16628",
+      "bytes": 1204
+    },
+    {
+      "path": "driver/src/libusb_transport.zig",
+      "git_blob": "1f4f3ebd4c1b47038f85286b78e8d07d345fdab1",
+      "sha256": "c46b0981590823dd73e176787a42e814c0ea6b1f8472b0db8b6f87c47c3dc414",
+      "bytes": 4399
+    },
+    {
+      "path": "driver/src/socket_source.zig",
+      "git_blob": "86cc952b7b34c93eb765470b595a2d28843e6f99",
+      "sha256": "3a21efd523de5aa57eafa0f0c40e0410d9e38aae4570ba23b66df22b2edfd78b",
+      "bytes": 5046
+    },
+    {
+      "path": "driver/src/tlv.zig",
+      "git_blob": "443aa8729830a4e4baf7353f34c7c76f37cf485b",
+      "sha256": "db7f2a110046d1cc923aad3b756fc22d613261c465ad262b1bb503018e1f4561",
+      "bytes": 6664
+    },
+    {
+      "path": "driver/src/tobiifree_core.zig",
+      "git_blob": "d3c2d3b85ad18c10fb3c1bf9deb4733c42cbb621",
+      "sha256": "e108645255c3e5f81444ae421521b2705d893df32fad29a78ab15a327d9950c2",
+      "bytes": 92469
+    },
+    {
+      "path": "driver/src/tobiifree_decode.zig",
+      "git_blob": "2c4bbcf29077802db4d67fc5c34cbac790f9c30f",
+      "sha256": "44f38286d4273dc5ee1689011e8fe3b2883dcee0c7b0c40378c5ca16d7526b23",
+      "bytes": 14260
+    },
+    {
+      "path": "driver/src/tracker.zig",
+      "git_blob": "810e25b4c8a062ea03fb00801add1adee4ebe850",
+      "sha256": "d4707b517042c63fbcf3ffadfa005e19bc06db0ea736197c53d74cd7a70d2976",
+      "bytes": 11092
+    },
+    {
+      "path": "driver/src/usb_source.zig",
+      "git_blob": "d87486c6f13d7fadcd42df638b7ac452e46aac4a",
+      "sha256": "c4c39aae9cd81d0ce195fd58cdc9b7c71b4e4dbf7a4dacd492b177833aaffa5f",
+      "bytes": 2844
+    }
+  ]
+}

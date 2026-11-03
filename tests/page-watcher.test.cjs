@@ -3,8 +3,32 @@ const { readFileSync } = require("node:fs");
 const { test } = require("node:test");
 const vm = require("node:vm");
 const path = require("node:path");
+const { createHash } = require("node:crypto");
 
 const renderer = readFileSync(require.resolve("../dist/renderer/PageWatcher.js"), "utf8");
+
+test("unchanged embedded WASM ships its pinned corresponding source", () => {
+  const sdk = path.resolve(__dirname, "../tools/tobiifree-sdk");
+  const source = path.join(sdk, "corresponding-source");
+  const provenance = JSON.parse(readFileSync(path.join(source, "PROVENANCE.json"), "utf8"));
+  const sha256 = (data) => createHash("sha256").update(data).digest("hex");
+  assert.equal(provenance.revision, "713af3760650254947b5999785a1199d0dd38129");
+  const expected = "1e9984cea6b5a142b48a0d2b8867d7418903252b1d3c95201247af1503ffaaa0";
+  for (const file of ["src/wasm-bundle.ts", "dist/wasm-bundle.js"]) {
+    const text = readFileSync(path.join(sdk, file), "utf8");
+    const encoded = text.match(/const BASE64 = '([^']+)'/);
+    assert.ok(encoded, file);
+    const binary = Buffer.from(encoded[1], "base64");
+    assert.equal(binary.length, 644600);
+    assert.equal(sha256(binary), expected);
+    if (file.startsWith("src/")) assert.equal(sha256(text), provenance.bundle_sha256);
+  }
+  for (const file of provenance.files) {
+    assert.equal(sha256(readFileSync(path.join(source, file.path))), file.sha256, file.path);
+  }
+  assert.equal(provenance.files.length, 16);
+  assert.ok(readFileSync(path.join(source, "SOURCE.md")).length);
+});
 
 test("package includes its license and corresponding integration source", () => {
   const root = path.resolve(__dirname, "..");
