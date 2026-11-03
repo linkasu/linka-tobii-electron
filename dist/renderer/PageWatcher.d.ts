@@ -41,7 +41,7 @@ export declare class PageWatcher {
     destroy(): void;
     watchElementsChange(force?: boolean): void;
     onKeyboard(code: string): boolean;
-    clickWatch(el: Element, eye: boolean): void;
+    clickWatch(el: Element, eye: boolean, source?: "keyboard" | "joystick"): void;
     enterWatch(el?: Element): void;
     exitWatch(): void;
     private joystickCycle;

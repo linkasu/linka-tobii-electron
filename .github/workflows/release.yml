@@ -20,7 +20,13 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
-      - run: npm pack
+      - run: npm test
+      - run: npm pack --ignore-scripts
+      - name: Test packed renderer and licensing files
+        run: |
+          mkdir .pack-test
+          tar -xzf linkasu-tobii-electron-*.tgz -C .pack-test
+          node --test .pack-test/package/tests/*.test.cjs
       - uses: softprops/action-gh-release@v2
         with:
           files: linkasu-tobii-electron-*.tgz
