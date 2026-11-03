@@ -1,2 +1,3 @@
 # Preserve exact upstream source bytes used by the corresponding-source manifest.
 tools/tobiifree-sdk/corresponding-source/** -text
+tools/tobiifree-sdk/src/wasm-bundle.ts -text
