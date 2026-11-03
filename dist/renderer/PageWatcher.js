@@ -150,18 +150,18 @@ class PageWatcher {
             this.lastElement.dispatchEvent(new CustomEvent("eye-enter", { detail: {} }));
         }
         else {
-            this.clickWatch(this.lastElement, false);
+            this.clickWatch(this.lastElement, false, joy ? "joystick" : "keyboard");
         }
         return true;
     }
-    clickWatch(el, eye) {
+    clickWatch(el, eye, source = "keyboard") {
         const settings = this.getSettings();
         if (eye && this.isEyeDisabled(el))
             return;
         if (!el.classList.contains("lock")) {
             if (eye && !settings.eyeActivation)
                 return;
-            if (!eye && !settings.keyboardActivation)
+            if (!eye && !(source === "joystick" ? settings.joystickActivation : settings.keyboardActivation))
                 return;
         }
         el.dispatchEvent(new CustomEvent("click", { detail: {} }));
